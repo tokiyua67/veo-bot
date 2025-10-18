@@ -5,21 +5,25 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def home():
-    return "Bot is running!"
-
 @app.route("/api/interactions", methods=["POST"])
 def interactions():
     data = request.json
-    prompt = data.get("data", {}).get("options", [])[0].get("value", "")
-    video_url = f"https://yourdomain.com/video/{prompt}"
+
+    # 👇 ここが追加ポイント！DiscordのPINGに返事する
+    if data["type"] == 1:
+        return jsonify({"type": 1})
+
+    # 👇 ここからはコマンド処理
+    option = data.get("data", {}).get("options", [])[0]
+    prompt = option.get("value", "")
+    video_url = "https://yourdomain.com/videos"
     return jsonify({
         "type": 4,
         "data": {
-            "content": f"こちらが「{prompt}」の動画です: {video_url}"
+            "content": f"こちらが{prompt}の"
         }
     })
+
 
 if __name__ == "__main__":
     app.run()
