@@ -29,47 +29,41 @@ if __name__ == "__main__":
     app.run()
 📁 app.py ...
 from flask import Flask, request, jsonify
-import requests
+from nacl.signing import VerifyKey
 
 app = Flask(__name__)
 
-@app.route("/", methods=["GET"])
-def index():
-    return "Bot is running!"
+PUBLIC_KEY = "ここにDiscordのPublic Keyを貼る"
+verify_key = VerifyKey(bytes.fromhex(PUBLIC_KEY))
 
 @app.route("/api/interactions", methods=["POST"])
 def interactions():
-    data = request.json
-    option = data.get("data", {}).get("options", [])[0]
-    prompt = option.get("value", "")
-    video_url = "https://yourdomain.com/video.mp4"
+    signature = request.headers["X-Signature-Ed25519"]
+    timestamp = request.headers["X-Signature-Timestamp"]
+    body = request.data.decode("utf-8")
+
+    try:
+    verify_key.verify(
+        f"{timestamp}{body}".encode(),
+        signature=bytes.fromhex(signature)
+    )
+except:
+    return "invalid request signature", 401
+
+data = request.json
+if data["type"] == 1:
+    return jsonify({"type": 1})
+
+elif data["type"] == 2 and data["data"]["name"] == "test":
     return jsonify({
         "type": 4,
         "data": {
-            "content": f"こちらが「{prompt}」の動画です！\n{video_url}"
+            "content": "こちらが動画です！"
         }
     })
 
 if __name__ == "__main__":
     app.run()
-
-
-📁 requirements.txt ...
-flask
-requests
-
-
-📁 .render.yaml ...
-services:
-  - type: web
-    name: veo-bot
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py
-
-
-
-
 
 
 
